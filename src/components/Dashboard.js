@@ -2,32 +2,33 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from './AuthContext';
 import { Navigate } from 'react-router-dom';
 import axios from 'axios';
-import { FileText, X } from 'lucide-react';
+import { FileText, X, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { User } from 'lucide-react';
 
 function Dashboard() {
     const { token, loading } = useContext(AuthContext);
     const [summaries, setSummaries] = useState([]);
     const [selectedSummary, setSelectedSummary] = useState(null);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
+        const fetchSummaries = async () => {
+            try {
+                const response = await axios.get('/api/summaries', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setSummaries(response.data);
+                setError(null);
+            } catch (error) {
+                setError('Error fetching summaries');
+                console.error('Error fetching summaries:', error);
+            }
+        };
+
         if (token) {
             fetchSummaries();
         }
     }, [token]);
-
-    const fetchSummaries = async () => {
-        try {
-            const response = await axios.get('/api/summaries', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setSummaries(response.data);
-        } catch (error) {
-            console.error('Error fetching summaries:', error);
-        }
-    };
-
 
     const openModal = (summary) => {
         setSelectedSummary(summary);
@@ -55,15 +56,17 @@ function Dashboard() {
                         <Link to="/summarizer" className="hover:text-blue-200">Summarize</Link>
                         <Link to="/dashboard" className="hover:text-blue-200">Dashboard</Link>
                         <span className="inline-flex items-center space-x-1">
-                            <User className="h-5 w-5 text-black" /> {/* Assuming User is an SVG or component */}
+                            <User className="h-5 w-5 text-black" />
                             <span>{token ? 'Logged In' : 'Not Logged In'}</span>
                         </span>
                     </div>
                 </div>
             </nav>
             <h1 className="text-2xl font-bold mb-4 mt-10">Your Summaries</h1>
+            {error && <div className="text-red-500 text-center">{error}</div>}
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {summaries.map((summary) => (
+                {Array.isArray(summaries) && summaries.map((summary) => (
                     <div key={summary._id} className="border rounded-lg shadow-lg bg-white p-4">
                         <h2 className="text-xl font-semibold mb-2">Summary</h2>
                         <p className="text-sm mb-4">{summary.summary}</p>
@@ -79,8 +82,14 @@ function Dashboard() {
             </div>
 
             {selectedSummary && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+                    onClick={closeModal}
+                >
+                    <div
+                        className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="p-4">
                             <div className="flex justify-between items-center mb-4">
                                 <h2 className="text-xl font-semibold">Original Text</h2>

@@ -24,11 +24,12 @@ mongoose.connect(process.env.MONGODB_URI)
         process.exit(1); // Exit process if connection fails
     });
 
-// Middleware
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:3000', // Ensure this is set in your .env file
-    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Add methods as needed
+    origin: '*', // Allow all origins
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true // Allow credentials (cookies, headers) if needed
 }));
+
 app.use(express.json()); // Parse JSON bodies
 app.use('/api', summaryRoutes); // This should correctly prefix all routes in summaryRoutes with /api
 
