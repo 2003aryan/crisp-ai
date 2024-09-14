@@ -36,7 +36,7 @@ app.use('/api', summaryRoutes); // This should correctly prefix all routes in su
 app.use('/api/auth', authRoutes); // Routes prefixed with /api/auth
 
 // Serve static files from the React app
-// app.use(express.static(path.join(__dirname, '../client/build')));
+app.use(express.static(path.join(__dirname, '../client/build')));
 
 // Status check API
 app.get('/api/status', (req, res) => {
@@ -44,9 +44,9 @@ app.get('/api/status', (req, res) => {
 });
 
 // Serve React's index.html for any route not handled by the API
-// app.get('*', (req, res) => {
-//     res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
-// });
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+});
 
 // Start the server
 app.listen(PORT, () => {
