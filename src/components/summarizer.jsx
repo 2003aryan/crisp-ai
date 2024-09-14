@@ -2,8 +2,9 @@ import { useContext, useState, useEffect, useCallback, useMemo, useRef } from 'r
 import { AuthContext } from "./AuthContext";
 import { Navigate } from "react-router-dom";
 import axios from 'axios';
-import { Download, Copy, FileText, Clipboard, Save, User } from 'lucide-react';
+import { Download, Copy, FileText, Clipboard, Save, User, LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Toaster, toast } from 'react-hot-toast';
 
 function Summarizer() {
     const { token, loading } = useContext(AuthContext);
@@ -19,14 +20,22 @@ function Summarizer() {
     const inputWordCount = useMemo(() => inputText.trim().split(/\s+/).filter(Boolean).length, [inputText]);
     const summaryWordCount = useMemo(() => summary.trim().split(/\s+/).filter(Boolean).length, [summary]);
 
+    const MAX_WORD_LIMIT = 800;
+
     const handleSummarize = useCallback(async () => {
         if (!inputText.trim()) {
-            setError('Input text is required');
+            toast.error('Input text is required');
+            return;
+        }
+
+        if (inputWordCount > MAX_WORD_LIMIT) {
+            toast.error(`Input exceeds ${MAX_WORD_LIMIT} words limit. Please shorten your text.`);
             return;
         }
 
         setIsLoading(true);
         setError('');
+        const toastId = toast.loading('Summarizing...');
         try {
             const response = await axios.post(
                 "https://api-inference.huggingface.co/models/facebook/bart-large-cnn",
@@ -41,40 +50,28 @@ function Summarizer() {
 
             if (response.data && response.data.length > 0 && response.data[0].summary_text) {
                 setSummary(response.data[0].summary_text);
+                toast.success('Summary generated successfully!', { id: toastId });
             } else {
                 throw new Error('Unexpected response format from summarization API');
             }
         } catch (err) {
             console.error('Error:', err);
             setError(err.message || 'Failed to summarize text');
+            toast.error('Failed to summarize text. Please try again.', { id: toastId });
         } finally {
             setIsLoading(false);
         }
-    }, [inputText]);
-
-    useEffect(() => {
-        const checkApiStatus = async () => {
-            try {
-                const response = await axios.get('/api/status', {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-                if (response.status === 200) {
-                    setApiStatus(response.data.message);
-                } else {
-                    setApiStatus('API is not responding');
-                }
-            } catch (err) {
-                setApiStatus('Failed to check API status');
-            }
-        };
-
-        checkApiStatus();
-    }, [token]);
+    }, [inputText, inputWordCount]);
 
     const handleInputChange = useCallback((e) => {
-        setInputText(e.target.value);
+        const newText = e.target.value;
+        const wordCount = newText.trim().split(/\s+/).filter(Boolean).length;
+        if (wordCount <= MAX_WORD_LIMIT) {
+            setInputText(newText);
+            setError('');
+        } else {
+            toast.error(`Input exceeds ${MAX_WORD_LIMIT} words limit. Please shorten your text.`);
+        }
     }, []);
 
     const handleDownload = useCallback(() => {
@@ -85,15 +82,18 @@ function Summarizer() {
         document.body.appendChild(element);
         element.click();
         document.body.removeChild(element);
+        toast.success('Summary downloaded successfully!');
     }, [summary]);
 
     const handleCopy = useCallback(() => {
         navigator.clipboard.writeText(summary);
+        toast.success('Summary copied to clipboard!');
     }, [summary]);
 
     const handlePasteSample = useCallback(() => {
-        const sampleText = `Republican U.S. presidential candidate Donald Trump said on Thursday that he will end all taxes on overtime pay as part of a wider tax cut package, if he is elected in the Nov. 5 election. 'As part of our additional tax cuts, we will end all taxes on overtime,' Trump said in remarks at a rally in Tucson, Arizona. 'Your overtime hours will be tax-free.' Trump, who faces Democratic Vice President Kamala Harris in what polls show to be a tight race, has previously said he would seek legislation to end the taxation of tips to aid service workers. Harris has made a similar pledge. 'He is desperate and scrambling and saying whatever it takes to try to trick people into voting for him,' a Harris campaign spokesperson said in response to Trump's proposal on Thursday. At a campaign event this month with union workers, Harris accused Trump of 'blocking' overtime from millions of workers during his 2017-2021 presidency. In 2019, the Trump administration issued a rule increasing the eligibility of overtime pay to 1.3 million additional U.S. workers, replacing a more generous proposal that had been introduced by President Barack Obama, Trump's Democratic predecessor. The Trump administration raised the salary level for exemption from overtime pay to $35,568 a year, up from the long-standing $23,660 threshold. Workers' rights groups criticized the move, saying it covered far fewer workers than the scheme introduced under Obama. Under Obama, the Labor Department proposed raising the threshold to more than $47,000, which would have made nearly 5 million more workers eligible for overtime. That rule was later struck down in court. Overtime pay at these income levels overwhelmingly benefits blue-collar workers, such as fast-food workers, nurses, store assistants and other low-income employees. 'The people who work overtime are among the hardest working citizens in our country and for too long no one in Washington has been looking out for them,' Trump said on Thursday. Under Labor Department rules, eligible workers must be paid at least time-and-a-half for hours worked above 40 hours in a single work-week. As of last month, American factory workers in non-supervisory roles put in an average of 3.7 hours of overtime a week, data from the Bureau of Labor Statistics shows. Not taxing overtime would result in less government revenue, at a time when Trump's plan to permanently extend the tax cuts he passed as president would expand the U.S. deficit by $3.5 trillion through 2033, according to the non-partisan Congressional Budget Office. The U.S. budget deficit in the first 11 months of this fiscal year is $1.9 trillion. It's unclear how much revenue the government receives from taxes on overtime pay. Trump's proposal would be a first for the federal government. Alabama this year became the first state to exclude overtime wages for hourly workers from state taxes as a temporary measure that won legislative support in part to help employers fill jobs in a tight labor market. The exemption is for 18 months only.`;
+        const sampleText = `Drones piloted by artificial intelligence (AI), rather than humans, could soon work together in teams to prevent wildfires, say researchers. Swarms of up to 30 autonomous planes would be able to spot and put out flames which can lead to wildfires by working collectively using AI, if a study in the UK is a success. The team of firefighters, engineers and scientists working on the research – which is still in the test phase and has not yet been used on a wildfire – say their project is the first to combine unpiloted drone technology with swarm engineering for firefighting. Drones piloted by people are already used in firefighting, to detect hidden blazes and assess safety risks, among other tasks. The drones that researchers want to eventually use for firefighting are large twin-engined aircraft with a wingspan of 9.5 metres and huge water-carrying capacity. They are already designed to fly without any intervention from remote pilots. Now the next stage of the project, swarm engineering, aims to make lots of robots work together in real-world applications. Professor Sabine Hauert, from the University of Bristol, one of the project partners, told the BBC: “When you look at birds and ants and bees, they can do beautiful, complex behaviours by coordinating – and so we take inspiration from that to coordinate large numbers of robots.”`;
         setInputText(sampleText);
+        toast.success('Sample text pasted!');
     }, []);
 
     const handleSave = useCallback(async () => {
@@ -107,13 +107,37 @@ function Summarizer() {
                 }
             });
             if (response.status === 200) {
-                alert('Summary saved successfully!');
+                toast.success('Summary saved successfully!');
             }
         } catch (err) {
             console.error('Error saving summary:', err);
-            alert('Failed to save summary. Please try again.');
+            toast.error('Failed to save summary. Please try again.');
         }
     }, [inputText, summary, token]);
+
+    useEffect(() => {
+        const checkApiStatus = async () => {
+            try {
+                const response = await axios.get('/api/status', {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+                if (response.status === 200) {
+                    setApiStatus(response.data.message);
+                    // toast.success('API is ready!');
+                } else {
+                    setApiStatus('API is not responding');
+                    toast.error('API is not responding. Please try again later.');
+                }
+            } catch (err) {
+                setApiStatus('Failed to check API status');
+                toast.error('Failed to check API status. Please try again later.');
+            }
+        };
+
+        checkApiStatus();
+    }, [token]);
 
     if (loading) {
         return <div>Loading...</div>;
@@ -132,11 +156,13 @@ function Summarizer() {
                     <Link to="/" className="text-2xl font-bold text-blue-500">crisp.ai</Link>
                     <div className="flex items-center space-x-12">
                         <Link to="/summarizer" className="hover:text-blue-200">Summarize</Link>
-                        <Link to="/dashboard" className="hover:text-blue-200">Dashboard</Link>
+                        <Link to="/dashboard" className="hover:text-blue-200">History</Link>
+                    <Link to="/login" className="hover:text-blue-200">
                         <span className="inline-flex items-center space-x-1">
-                            <User className="h-5 w-5 text-black" /> {/* Assuming User is an SVG or component */}
-                            <span>{token ? 'Logged In' : 'Not Logged In'}</span>
+                                <LogOut className="h-5 w-5 text-black" /> {/* Assuming User is an SVG or component */}
+                            <span>{token ? 'Logout' : 'Not Logged In'}</span>
                         </span>
+                    </Link>
                     </div>
                 </div>
             </nav>

@@ -59,7 +59,7 @@ router.post("/login", async (req, res) => {
 // Register Route
 router.post("/register", async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { fullname, username, password } = req.body;
 
         const existingUser = await User.findOne({ username });
         if (existingUser) return res.status(400).json({ error: "Username already exists." });
@@ -67,7 +67,7 @@ router.post("/register", async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        const user = new User({ username, password: hashedPassword });
+        const user = new User({ fullname, username, password: hashedPassword });
         const savedUser = await user.save();
 
         const token = jwt.sign({ userId: savedUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });

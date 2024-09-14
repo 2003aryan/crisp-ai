@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from './AuthContext';
 import { Navigate } from 'react-router-dom';
 import axios from 'axios';
-import { FileText, X, User } from 'lucide-react';
+import { FileText, X, User, LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 function Dashboard() {
@@ -54,21 +54,24 @@ function Dashboard() {
                     <Link to="/" className="text-2xl font-bold text-blue-500">crisp.ai</Link>
                     <div className="flex items-center space-x-12">
                         <Link to="/summarizer" className="hover:text-blue-200">Summarize</Link>
-                        <Link to="/dashboard" className="hover:text-blue-200">Dashboard</Link>
-                        <span className="inline-flex items-center space-x-1">
-                            <User className="h-5 w-5 text-black" />
-                            <span>{token ? 'Logged In' : 'Not Logged In'}</span>
-                        </span>
+                        <Link to="/dashboard" className="hover:text-blue-200">History</Link>
+                        <Link to="/login" className="hover:text-blue-200">
+                            <span className="inline-flex items-center space-x-1">
+                                <LogOut className="h-5 w-5 text-black" /> {/* Assuming User is an SVG or component */}
+                                <span>{token ? 'Logout' : 'Not Logged In'}</span>
+                            </span>
+                        </Link>
                     </div>
                 </div>
             </nav>
-            <h1 className="text-2xl font-bold mb-4 mt-10">Your Summaries</h1>
+            <h1 className="text-2xl font-bold mb-4 mt-10">Your Saved Summaries</h1>
             {error && <div className="text-red-500 text-center">{error}</div>}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {Array.isArray(summaries) && summaries.map((summary) => (
                     <div key={summary._id} className="border rounded-lg shadow-lg bg-white p-4">
                         <h2 className="text-xl font-semibold mb-2">Summary</h2>
+                        <h4 className='text-sm mb-2'>{summary.createdAt}</h4>
                         <p className="text-sm mb-4">{summary.summary}</p>
                         <button
                             onClick={() => openModal(summary)}

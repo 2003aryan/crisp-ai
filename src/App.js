@@ -6,6 +6,7 @@ import Summarizer from './components/summarizer';
 import Login from './components/Login'; // Login component
 import Register from './components/Register'; // Register component
 import Dashboard from './components/Dashboard'; // Dashboard component
+import { Toaster } from 'react-hot-toast';
 
 // PrivateRoute component to protect certain routes
 function PrivateRoute({ children }) {
@@ -34,6 +35,7 @@ export default function Root() {
   return (
     <AuthProvider>
       <App />
+      <Toaster />
     </AuthProvider>
   );
 }

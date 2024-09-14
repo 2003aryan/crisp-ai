@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 
 const Register = () => {
+    const [fullname, setFullname] = useState('');
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -19,7 +20,7 @@ const Register = () => {
         }
 
         try {
-            await axios.post('http://localhost:3001/api/auth/register', { username, password });
+            await axios.post('http://0.0.0.0:3001/api/auth/register', { fullname, username, password });
             navigate('/login');
         } catch (error) {
             console.error('Registration failed', error);
@@ -33,6 +34,18 @@ const Register = () => {
                 <h1 className="text-3xl font-semibold text-center text-gray-900 mb-6">Register</h1>
                 {error && <p className="text-red-500 text-center mb-4">{error}</p>}
                 <form onSubmit={handleSubmit} className="space-y-6">
+                    <div>
+                        <label htmlFor="fullname" className="block text-sm font-medium text-gray-700">Name</label>
+                        <input
+                            id="fullname"
+                            type="text"
+                            placeholder="Enter your name"
+                            value={fullname}
+                            onChange={(e) => setFullname(e.target.value)}
+                            className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            required
+                        />
+                    </div>
                     <div>
                         <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label>
                         <input
