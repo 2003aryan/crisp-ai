@@ -1,10 +1,10 @@
-import { useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AuthContext } from "./AuthContext";
 import { Navigate } from "react-router-dom";
 import axios from 'axios';
-import { Download, Copy, FileText, Clipboard, Save, User, LogOut } from 'lucide-react';
+import { Download, Copy, FileText, Clipboard, Save, LogOut, Upload } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Toaster, toast } from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 
 function Summarizer() {
     const { token, loading } = useContext(AuthContext);
@@ -14,8 +14,10 @@ function Summarizer() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [apiStatus, setApiStatus] = useState('');
+    const [file, setFile] = useState(null);
 
     const apiKeyRef = useRef(process.env.REACT_APP_HUGGINGFACE_API_KEY);
+    const fileInputRef = useRef(null);
 
     const inputWordCount = useMemo(() => inputText.trim().split(/\s+/).filter(Boolean).length, [inputText]);
     const summaryWordCount = useMemo(() => summary.trim().split(/\s+/).filter(Boolean).length, [summary]);
@@ -91,7 +93,7 @@ function Summarizer() {
     }, [summary]);
 
     const handlePasteSample = useCallback(() => {
-        const sampleText = `Drones piloted by artificial intelligence (AI), rather than humans, could soon work together in teams to prevent wildfires, say researchers. Swarms of up to 30 autonomous planes would be able to spot and put out flames which can lead to wildfires by working collectively using AI, if a study in the UK is a success. The team of firefighters, engineers and scientists working on the research – which is still in the test phase and has not yet been used on a wildfire – say their project is the first to combine unpiloted drone technology with swarm engineering for firefighting. Drones piloted by people are already used in firefighting, to detect hidden blazes and assess safety risks, among other tasks. The drones that researchers want to eventually use for firefighting are large twin-engined aircraft with a wingspan of 9.5 metres and huge water-carrying capacity. They are already designed to fly without any intervention from remote pilots. Now the next stage of the project, swarm engineering, aims to make lots of robots work together in real-world applications. Professor Sabine Hauert, from the University of Bristol, one of the project partners, told the BBC: “When you look at birds and ants and bees, they can do beautiful, complex behaviours by coordinating – and so we take inspiration from that to coordinate large numbers of robots.”`;
+        const sampleText = `Drones piloted by artificial intelligence (AI), rather than humans, could soon work together in teams to prevent wildfires, say researchers. Swarms of up to 30 autonomous planes would be able to spot and put out flames which can lead to wildfires by working collectively using AI, if a study in the UK is a success. The team of firefighters, engineers and scientists working on the research – which is still in the test phase and has not yet been used on a wildfire – say their project is the first to combine unpiloted drone technology with swarm engineering for firefighting. Drones piloted by people are already used in firefighting, to detect hidden blazes and assess safety risks, among other tasks. The drones that researchers want to eventually use for firefighting are large twin-engined aircraft with a wingspan of 9.5 metres and huge water-carrying capacity. They are already designed to fly without any intervention from remote pilots. Now the next stage of the project, swarm engineering, aims to make lots of robots work together in real-world applications. Professor Sabine Hauert, from the University of Bristol, one of the project partners, told the BBC: "When you look at birds and ants and bees, they can do beautiful, complex behaviours by coordinating – and so we take inspiration from that to coordinate large numbers of robots."`;
         setInputText(sampleText);
         toast.success('Sample text pasted!');
     }, []);
@@ -115,6 +117,40 @@ function Summarizer() {
         }
     }, [inputText, summary, token]);
 
+    const handleFileUpload = useCallback(async (e) => {
+        const selectedFile = e.target.files[0];
+        if (selectedFile) {
+            const fileType = selectedFile.type;
+            if (fileType === 'application/pdf' ||
+                fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+                fileType === 'text/plain') {
+                setFile(selectedFile);
+
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+
+                try {
+                    const response = await axios.post('/api/upload-file', formData, {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                            Authorization: `Bearer ${token}`,
+                        },
+                    });
+
+                    if (response.data && response.data.text) {
+                        setInputText(response.data.text);
+                        toast.success('File uploaded and text extracted successfully!');
+                    }
+                } catch (error) {
+                    console.error('Error uploading file:', error);
+                    toast.error('Failed to upload file. Please try again.');
+                }
+            } else {
+                toast.error('Please upload a PDF, DOCX, or TXT file.');
+            }
+        }
+    }, [token]);
+
     useEffect(() => {
         const checkApiStatus = async () => {
             try {
@@ -125,7 +161,6 @@ function Summarizer() {
                 });
                 if (response.status === 200) {
                     setApiStatus(response.data.message);
-                    // toast.success('API is ready!');
                 } else {
                     setApiStatus('API is not responding');
                     toast.error('API is not responding. Please try again later.');
@@ -148,7 +183,6 @@ function Summarizer() {
     }
 
     return (
-        // <div className="flex flex-col min-h-screen">
         <div className="container mx-auto p-4">
             {/* Navbar */}
             <nav className="bg-white text-black p-4 shadow-xl rounded-2xl">
@@ -157,12 +191,12 @@ function Summarizer() {
                     <div className="flex items-center space-x-12">
                         <Link to="/summarizer" className="hover:text-blue-200">Summarize</Link>
                         <Link to="/dashboard" className="hover:text-blue-200">History</Link>
-                    <Link to="/login" className="hover:text-blue-200">
-                        <span className="inline-flex items-center space-x-1">
-                                <LogOut className="h-5 w-5 text-black" /> {/* Assuming User is an SVG or component */}
-                            <span>{token ? 'Logout' : 'Not Logged In'}</span>
-                        </span>
-                    </Link>
+                        <Link to="/login" className="hover:text-blue-200">
+                            <span className="inline-flex items-center space-x-1">
+                                <LogOut className="h-5 w-5 text-black" />
+                                <span>{token ? 'Logout' : 'Not Logged In'}</span>
+                            </span>
+                        </Link>
                     </div>
                 </div>
             </nav>
@@ -185,9 +219,24 @@ function Summarizer() {
                         <div className="flex justify-between items-center">
                             <span>{inputWordCount} Words</span>
                             <div className="space-x-2">
+                                <input
+                                    type="file"
+                                    accept=".pdf,.docx,.txt"
+                                    onChange={handleFileUpload}
+                                    className="hidden"
+                                    id="file-upload"
+                                    ref={fileInputRef}
+                                />
+                                <button
+                                    onClick={() => fileInputRef.current.click()}
+                                    className="inline-flex items-center px-3 py-2 border border-blue-500 text-sm font-medium rounded-md text-blue-500 bg-white hover:bg-gray-50"
+                                >
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    Upload File
+                                </button>
                                 <button
                                     onClick={handlePasteSample}
-                                    className="inline-flex items-center justify-center px-3 py-2 w-28 text-sm font-medium bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
+                                    className="border border-blue-500 inline-flex items-center justify-center px-3 py-2 w-28 text-sm font-medium bg-white text-blue-500 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
                                 >
                                     <Clipboard className="mr-1 h-4 w-4" />
                                     Sample
@@ -202,6 +251,7 @@ function Summarizer() {
                                 </button>
                             </div>
                         </div>
+                        {file && <p className="mt-2 text-sm text-gray-500">{file.name}</p>}
                     </div>
                     {error && (
                         <div className="text-red-500 text-center">{error}</div>
