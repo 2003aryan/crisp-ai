@@ -20,7 +20,7 @@ const Register = () => {
         }
 
         try {
-            await axios.post('http://0.0.0.0:3001/api/auth/register', { fullname, username, password });
+            await axios.post(`${process.env.NODE_ENV !== 'production' ? 'http://localhost:5001' : ''}/api/auth/register`, { fullname, username, password });
             navigate('/login');
         } catch (error) {
             console.error('Registration failed', error);
