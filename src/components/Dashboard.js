@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from './AuthContext';
 import { Navigate } from 'react-router-dom';
 import axios from 'axios';
-import { FileText, X, User, LogOut } from 'lucide-react';
+import { FileText, X, LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 function Dashboard() {
@@ -46,6 +46,11 @@ function Dashboard() {
         return <Navigate to="/login" replace />;
     }
 
+    const formatDate = (dateString) => {
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        return new Date(dateString).toLocaleDateString(undefined, options);
+    };
+
     return (
         <div className="container mx-auto p-4">
             {/* Navbar */}
@@ -57,7 +62,7 @@ function Dashboard() {
                         <Link to="/dashboard" className="hover:text-blue-200">History</Link>
                         <Link to="/login" className="hover:text-blue-200">
                             <span className="inline-flex items-center space-x-1">
-                                <LogOut className="h-5 w-5 text-black" /> {/* Assuming User is an SVG or component */}
+                                <LogOut className="h-5 w-5 text-black" />
                                 <span>{token ? 'Logout' : 'Not Logged In'}</span>
                             </span>
                         </Link>
@@ -69,17 +74,21 @@ function Dashboard() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {Array.isArray(summaries) && summaries.map((summary) => (
-                    <div key={summary._id} className="border rounded-lg shadow-lg bg-white p-4">
-                        <h2 className="text-xl font-semibold mb-2">Summary</h2>
-                        <h4 className='text-sm mb-2'>{summary.createdAt}</h4>
-                        <p className="text-sm mb-4">{summary.summary}</p>
-                        <button
-                            onClick={() => openModal(summary)}
-                            className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
-                        >
-                            <FileText className="mr-2 h-4 w-4" />
-                            View Original Text
-                        </button>
+                    <div key={summary._id} className="flex flex-col border rounded-lg shadow-lg bg-white p-4">
+                        <div className="flex-1">
+                            <h2 className="text-xl font-semibold mb-1">Summary</h2>
+                            <h4 className='text-sm mb-2'>{formatDate(summary.createdAt)}</h4>
+                            <p className="text-sm mb-4">{summary.summary}</p>
+                        </div>
+                        <div className="mt-4">
+                            <button
+                                onClick={() => openModal(summary)}
+                                className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                            >
+                                <FileText className="mr-2 h-4 w-4" />
+                                View Original Text
+                            </button>
+                        </div>
                     </div>
                 ))}
             </div>

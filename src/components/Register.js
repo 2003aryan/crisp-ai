@@ -1,8 +1,8 @@
-// src/components/Register.js
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const Register = () => {
     const [fullname, setFullname] = useState('');
@@ -16,15 +16,18 @@ const Register = () => {
         e.preventDefault();
         if (password !== confirmPassword) {
             setError('Passwords do not match');
+            toast.error('Passwords do not match');
             return;
         }
 
         try {
-            await axios.post(`${process.env.NODE_ENV !== 'production' ? 'http://localhost:5001' : ''}/api/auth/register`, { fullname, username, password });
+            await axios.post(`/api/auth/register`, { fullname, username, password });
+            toast.success('Registration successful! Redirecting to login...');
             navigate('/login');
         } catch (error) {
             console.error('Registration failed', error);
             setError('Registration failed. Please try again.');
+            toast.error('Registration failed. Please try again.');
         }
     };
 

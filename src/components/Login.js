@@ -17,7 +17,7 @@ const Login = () => {
         const toastId = toast.loading('Logging in...');
 
         try {
-            const response = await axios.post(`${process.env.NODE_ENV !== 'production' ? 'http://localhost:5001' : ''}/api/auth/login`, {username, password });
+            const response = await axios.post(`/api/auth/login`, {username, password });
             if (login) {
                 login(response.data.token); // Save the token
                 toast.success('Login successful!', { id: toastId });
